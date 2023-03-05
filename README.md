@@ -16,7 +16,7 @@ We wired the ESP32 board directly to the potentiometers and servo motors. For th
 
 ## Arduino IDE
 
-In order for us to access the potentiometer values, we directly read the input and map it to a minimum and maimum value. 
+In order for us to access the potentiometer values, we directly read the input and map it to a minimum and maximum value. 
 
     analogValue = analogRead(36);
     value = map(analogValue, 0, 4095, VALUE_MIN, VALUE_MAX);
