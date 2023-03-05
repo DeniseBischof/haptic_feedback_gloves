@@ -48,8 +48,8 @@ After the estimation, SteamVR sends a haptic feedback to the serial port, which 
 
 In order for Unity to send the haptic feedback to the server motors, we estimate the curl of each finger from a skeleton passed in in the skeleton poser from SteamVR.
 
- public void SetForceFeedbackFromSkeleton(Hand hand, SteamVR_Skeleton_Pose_Hand skeleton)
-    {
+     public void SetForceFeedbackFromSkeleton(Hand hand, SteamVR_Skeleton_Pose_Hand skeleton)
+     {
         SteamVR_Skeleton_Pose_Hand openHand;
         SteamVR_Skeleton_Pose_Hand closedHand;
         
