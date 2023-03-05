@@ -44,5 +44,67 @@ After the estimation, SteamVR sends a haptic feedback to the serial port, which 
     }
     
     
+## Unity
 
+In order for Unity to send the haptic feedback to the server motors, we estimate the curl of each finger from a skeleton passed in in the skeleton poser from SteamVR.
 
+ public void SetForceFeedbackFromSkeleton(Hand hand, SteamVR_Skeleton_Pose_Hand skeleton)
+    {
+        SteamVR_Skeleton_Pose_Hand openHand;
+        SteamVR_Skeleton_Pose_Hand closedHand;
+        
+        if (hand.handType == SteamVR_Input_Sources.LeftHand)
+        {
+            openHand = ((SteamVR_Skeleton_Pose) Resources.Load("ReferencePose_OpenHand")).leftHand;
+            closedHand = ((SteamVR_Skeleton_Pose) Resources.Load("ReferencePose_Fist")).leftHand;
+        }
+        else
+        {
+            openHand = ((SteamVR_Skeleton_Pose) Resources.Load("ReferencePose_OpenHand")).rightHand;
+            closedHand = ((SteamVR_Skeleton_Pose) Resources.Load("ReferencePose_Fist")).rightHand;
+        }
+        
+        List<float>[] fingerCurlValues = new List<float>[5];
+        
+        for(int i = 0; i < fingerCurlValues.Length; i++) fingerCurlValues[i] = new List<float>();
+        
+        for (int boneIndex = 0; boneIndex < skeleton.bonePositions.Length; boneIndex++)
+        {
+            //calculate open hand angle to poser animation
+            float openToPoser = Quaternion.Angle(openHand.boneRotations[boneIndex], skeleton.boneRotations[boneIndex]);
+            
+            //calculate angle from open to closed
+            float openToClosed =
+                Quaternion.Angle(openHand.boneRotations[boneIndex], closedHand.boneRotations[boneIndex]);
+            
+            //get the ratio between open to poser and open to closed
+            float curl = openToPoser / openToClosed;
+            
+            //get the finger for the current bone
+            int finger = SteamVR_Skeleton_JointIndexes.GetFingerForBone(boneIndex);
+            
+            if (!float.IsNaN(curl) && curl != 0 && finger >= 0)
+            {
+                //Add it to the list of bone angles for averaging later
+                fingerCurlValues[finger].Add(curl);
+            }
+        }
+        //0-1000 averages of the fingers
+        short[] fingerCurlAverages = new short[5];
+
+        for (int i = 0; i < 5; i++)
+        {
+            float enumerator = 0;
+            for (int j = 0; j < fingerCurlValues[i].Count; j++)
+            {
+                enumerator += fingerCurlValues[i][j];
+            }
+            
+            //The value we to pass is where 0 is full movement flexibility, so invert.
+            fingerCurlAverages[i] = Convert.ToInt16(1000 - (Mathf.FloorToInt(enumerator / fingerCurlValues[i].Count * 1000)));
+            
+            Debug.Log(fingerCurlAverages[i]);
+        }
+        
+        _SetForceFeedback(hand, new VRFFBInput(fingerCurlAverages[0], fingerCurlAverages[1], fingerCurlAverages[2], fingerCurlAverages[3], fingerCurlAverages[4]));
+    }
